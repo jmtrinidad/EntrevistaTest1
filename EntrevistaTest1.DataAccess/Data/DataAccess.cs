@@ -1,9 +1,8 @@
-﻿using System;
+﻿using EntrevistaTest1.DataAccess.Models;
+using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Data;
 using System.Data.SqlClient;
-using EntrevistaTest1.DataAccess.Models;
 
 namespace EntrevistaTest1.DataAccess.Data
 {
@@ -33,7 +32,6 @@ namespace EntrevistaTest1.DataAccess.Data
 
                                     addresses.Add(addess);
                                 }
-
                             }
                         }
                     }
@@ -45,7 +43,6 @@ namespace EntrevistaTest1.DataAccess.Data
             }
             return addresses;
         }
-
         public List<Address> GetAddressesEntrevista1Test()
         {
             List<Address> addresses = new List<Address>();
@@ -85,7 +82,6 @@ namespace EntrevistaTest1.DataAccess.Data
             }
             return addresses;
         }
-
         public List<Address> GetAddressesEntrevista1TestWithFilter(string filter)
         {
             List<Address> addresses = new List<Address>();
@@ -99,7 +95,9 @@ namespace EntrevistaTest1.DataAccess.Data
                     using (var command = new SqlCommand("uspFilterAddress", connection))
                     {
                         command.CommandType = CommandType.StoredProcedure;
-                        command.Parameters.AddWithValue("@address", filter);
+                        //HICE UNA CONTENACION PARA EL Like, CUANDO ENVIO LA VARIABLE SIN
+                        // EL SIGNO DE % NO FUNCIONA EL FILTRO
+                        command.Parameters.AddWithValue("@address", $"%{filter}%");
                         using (var reader = command.ExecuteReader())
                         {
                             while (reader.Read())
@@ -110,12 +108,12 @@ namespace EntrevistaTest1.DataAccess.Data
                                     {
                                         Direction = reader["Address"].ToString(),
                                         Id = Convert.ToInt32(reader["Id"].ToString()),
-                                    }; 
+                                    };
                                     addresses.Add(addess);
-                                } 
+                                }
                             }
                         }
-                    } 
+                    }
                 }
             }
             catch
@@ -124,21 +122,22 @@ namespace EntrevistaTest1.DataAccess.Data
             }
             return addresses;
         }
-
         public bool CreateAddress(List<Address> addresses)
         {
             var result = false;
+            SqlTransaction transaction = null;
             try
             {
-                foreach (var item in addresses)
+                using (var connection = new SqlConnection(Connection.ConnectionStringEntrevista1Test))
                 {
-                    using (var connection = new SqlConnection(Connection.ConnectionStringEntrevista1Test))
+                    connection.Open();
+                    transaction = connection.BeginTransaction();
+                    foreach (var item in addresses)
                     {
-                        connection.Open();
                         //var query = "INSERT  Into Tb_Address (Address) Values (@address)";
                         if (!string.IsNullOrEmpty(item.Direction))
                         {
-                            using (var command = new SqlCommand("uspInsertAddress", connection))
+                            using (var command = new SqlCommand("uspInsertAddress", connection, transaction))
                             {
                                 command.CommandType = CommandType.StoredProcedure;
                                 command.Parameters.AddWithValue("@address", item.Direction);
@@ -146,11 +145,13 @@ namespace EntrevistaTest1.DataAccess.Data
                             }
                         }
                     }
-                }
-                result = true;
+                    transaction.Commit();
+                    result = true;
+                } 
             }
             catch
             {
+                transaction.Rollback();
                 return false;
             }
             return result;

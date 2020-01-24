@@ -50,11 +50,11 @@ namespace EntrevistaTest1.WindowForms
                             item.Direction.Contains(",") ||
                             item.Direction.Contains(";"))
                         {
-                            var dir = item.Direction.Replace("#", "?");
-                            var dir2 = dir.Replace(".", "?");
-                            var dir3 = dir2.Replace(",", "?");
-                            var dir4 = dir3.Replace(";", "?");
-                            var result = dir4.Split('?');
+                            var filter = item.Direction.Replace("#", "?");
+                            filter = filter.Replace(".", "?");
+                            filter = filter.Replace(",", "?");
+                            filter = filter.Replace(";", "?");
+                            var result = filter.Split('?');
 
                             for (int j = 0; j < result.Length; j++)
                             {
@@ -78,11 +78,11 @@ namespace EntrevistaTest1.WindowForms
                         }
                     }
                 }
-               var result2= dataAccess.CreateTokens(tokens);
-                if (result2) 
+                var result2 = dataAccess.CreateTokens(tokens);
+                if (result2)
                 {
                     dtgListado3.DataSource = tokens;
-                } 
+                }
             }
         }
     }
